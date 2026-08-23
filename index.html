@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OB/GYN Emergency — لعبة الطوارئ</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Tahoma,sans-serif;background:linear-gradient(135deg,#071827,#12364a);color:#fff;min-height:100vh}main{max-width:900px;margin:auto;padding:28px 18px}.card{background:#ffffff12;border:1px solid #ffffff20;border-radius:24px;padding:28px;backdrop-filter:blur(10px);box-shadow:0 20px 60px #0005}h1{font-size:clamp(28px,6vw,48px);margin:0 0 8px}h2{margin-top:0}.tag{display:inline-block;background:#e91e63;padding:7px 12px;border-radius:999px;font-size:13px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.stat{background:#0003;border-radius:14px;padding:10px 15px}.choice{width:100%;text-align:right;background:#fff;color:#123;padding:15px;margin:10px 0;border:0;border-radius:14px;font-size:16px;cursor:pointer;transition:.2s}.choice:hover{transform:translateY(-2px);background:#e8f7ff}.choice:disabled{cursor:default;opacity:.8}.correct{background:#b9f6ca!important}.wrong{background:#ffcdd2!important}.hidden{display:none}.feedback{padding:14px;border-radius:14px;background:#0004;margin-top:15px;line-height:1.7}.actions{display:flex;gap:10px;margin-top:18px}.btn{border:0;border-radius:14px;padding:13px 20px;font-weight:700;cursor:pointer}.primary{background:#e91e63;color:#fff}.secondary{background:#fff;color:#123}.progress{height:9px;background:#0005;border-radius:99px;overflow:hidden;margin:20px 0}.bar{height:100%;background:#e91e63;width:0;transition:.3s}small{opacity:.75}
+</style></head>
+<body><main><div class="card">
+<span class="tag">OB/GYN EMERGENCY • MEDICAL GAME</span><h1>🚨 مناورة الطوارئ</h1><p>هل تستطيع اتخاذ القرار الصحيح تحت الضغط؟ اختر التدبير الأفضل لكل حالة إسعافية توليدية.</p>
+<div class="stats"><div class="stat">🏆 النقاط: <b id="score">0</b></div><div class="stat">❤️ الأرواح: <b id="lives">3</b></div><div class="stat">📍 الحالة: <b id="num">1</b>/8</div></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<section id="game"><h2 id="q"></h2><div id="choices"></div><div id="feedback" class="feedback hidden"></div><div class="actions"><button class="btn primary hidden" id="next">الحالة التالية →</button></div></section>
+<section id="end" class="hidden"><h2>🎉 انتهت الجولة!</h2><p id="result"></p><button class="btn primary" onclick="location.reload()">العب من جديد</button></section>
+<hr style="border:0;border-top:1px solid #fff2;margin:25px 0"><small>نسخة تعليمية — لا تُستخدم كبديل عن البروتوكولات المحلية أو الحكم السريري.</small>
+</div></main>
+<script>
+const cases=[
+{q:'نزف شديد بعد الولادة، الرحم رخو ومتضخم. ما الخطوة الأولى؟',a:['تدليك الرحم + أوكسيتوسين','انتظار التحاليل','إعطاء مضاد حيوي فقط','إجراء استئصال رحم مباشرة'],c:0,e:'الصورة تتماشى مع atony؛ ابدأ بتدليك الرحم وإعطاء uterotonic مع إنعاش متزامن حسب الحالة.'},
+{q:'حامل 34 أسبوعاً مع ضغط 170/115 وصداع شديد. ما الأولوية؟',a:['تأمين الاستقرار ومنع الاختلاجات بالمغنيسيوم مع خفض الضغط الشديد','إعادتها للمنزل','إعطاء الحديد','انتظار المخاض العفوي'],c:0,e:'الضغط الشديد مع أعراض عصبية حالة إسعافية؛ الأولوية للاستقرار والوقاية من الاختلاجات والسيطرة الآمنة على الضغط.'},
+{q:'بعد ولادة مهبلية، نزف مستمر رغم تقلص الرحم جيداً. ماذا تبحث أولاً؟',a:['تمزق القناة التناسلية','حمل عنقودي','سكري الحمل','فرط الدرقية'],c:0,e:'إذا كان الرحم متقلصاً جيداً مع استمرار النزف، فكر بالـ trauma مثل التمزقات.'},
+{q:'حامل في المخاض مع تباطؤ جنيني حاد مستمر. ما أول إجراء عام؟',a:['تقييم فوري والبدء بإجراءات الإنعاش داخل الرحم مع البحث عن سبب','إعطاء الحديد','تأجيل التقييم ساعة','إعطاء مضاد قيء'],c:0,e:'التباطؤ المستمر يستدعي تقييماً فورياً وتدابير intrauterine resuscitation ومعالجة السبب.'},
+{q:'نزف مهبلي مؤلم مع رحم متوتر في الثلث الثالث. التشخيص الأكثر احتمالاً؟',a:['انفصال المشيمة','المشيمة المنزاحة','التهاب عنق الرحم','فرط القيء الحملي'],c:0,e:'النزف المؤلم مع رحم متوتر يوحي بانفصال المشيمة.'},
+{q:'نزف مهبلي غير مؤلم في أواخر الحمل مع رحم لين. ما الاحتمال الأهم؟',a:['المشيمة المنزاحة','انفصال المشيمة','تمزق الرحم دائماً','التهاب الزائدة'],c:0,e:'النزف غير المؤلم في أواخر الحمل يثير الشك بالمشيمة المنزاحة.'},
+{q:'مريضة بعد الولادة لديها ضيق نفس وألم صدري مفاجئ. ماذا تفعل؟',a:['تقييم إسعافي لاحتمال الصمة الرئوية ودعم ABC','طمأنتها فقط','إعطاء الحديد','انتظار زيارة المتابعة'],c:0,e:'الأعراض قد تمثل PE؛ يلزم تقييم إسعافي ودعم ABC وبدء المسار التشخيصي/العلاجي المناسب.'},
+{q:'نزف بعد الولادة لا يستجيب للتدليك والأوكسيتوسين. ما الخطوة التالية العامة؟',a:['تصعيد علاج النزف سريعاً: uterotonics إضافية/وسائل ميكانيكية أو جراحية حسب السبب والبروتوكول','إيقاف المراقبة','إعطاء سوائل فموية فقط','إرسالها للمنزل'],c:0,e:'النزف المستمر يتطلب تصعيداً منظماً ومتزامناً مع الإنعاش وتحديد السبب.'}
+];
+let i=0,score=0,lives=3,answered=false;
+const $=id=>document.getElementById(id);function render(){answered=false;$('num').textContent=i+1;$('q').textContent=cases[i].q;$('bar').style.width=(i/cases.length*100)+'%';$('feedback').classList.add('hidden');$('next').classList.add('hidden');$('choices').innerHTML='';cases[i].a.forEach((x,n)=>{let b=document.createElement('button');b.className='choice';b.textContent=x;b.onclick=()=>choose(n,b);$('choices').appendChild(b)})}
+function choose(n,b){if(answered)return;answered=true;document.querySelectorAll('.choice').forEach(x=>x.disabled=true);let d=cases[i];if(n===d.c){score+=100;b.classList.add('correct');$('feedback').innerHTML='✅ <b>قرار ممتاز!</b><br>'+d.e}else{lives--;b.classList.add('wrong');document.querySelectorAll('.choice')[d.c].classList.add('correct');$('feedback').innerHTML='❌ <b>ليس الخيار الأفضل.</b><br>'+d.e}$('score').textContent=score;$('lives').textContent=lives;$('feedback').classList.remove('hidden');$('next').classList.remove('hidden');if(lives<=0)$('next').textContent='إنهاء الجولة';}
+$('next').onclick=()=>{i++;if(i>=cases.length||lives<=0){$('game').classList.add('hidden');$('end').classList.remove('hidden');$('result').textContent=`حصلت على ${score} نقطة من ${cases.length*100}. ${score>=600?'🔥 أداء رائع جداً!':'👏 بداية جيدة — جرّب مرة أخرى لتحسين نتيجتك.'}`;return}render()};render();
+</script></body></html>
