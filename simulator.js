@@ -1,19 +1,49 @@
-/* OB/GYN Emergency Simulator — stable interaction layer */
+/* OB/GYN Emergency Simulator — lightweight mode
+   Audio intentionally disabled to keep the game fast and reliable. */
 (function(){
 'use strict';
-let audioCtx=null,musicGain=null,musicTimer=null,musicOn=false,timer=null,seconds=45,timerStep='';
+let timer=null,seconds=45,timerStep='';
 const $=id=>document.getElementById(id);
-function tone(freq=440,duration=.18,when=0,gain=.07){if(!audioCtx||!musicGain)return;const now=audioCtx.currentTime+when,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.setValueAtTime(freq,now);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.025);g.gain.exponentialRampToValueAtTime(.0001,now+duration);o.connect(g);g.connect(musicGain);o.start(now);o.stop(now+duration+.04)}
-function musicLabel(){const b=$('musicBtn');if(!b)return;const ar=window.gameLang==='ar';b.textContent=musicOn?(ar?'🔊 الموسيقى':'🔊 Music'):(ar?'🔇 الموسيقى':'🔇 Music');b.setAttribute('aria-pressed',String(musicOn))}
-async function startMusic(){try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw Error('Web Audio unavailable');if(!audioCtx)audioCtx=new Ctx();if(audioCtx.state==='suspended')await audioCtx.resume();if(!musicGain){musicGain=audioCtx.createGain();musicGain.gain.value=.22;musicGain.connect(audioCtx.destination)}if(musicOn){musicLabel();return}musicOn=true;musicLabel();const melody=[261.63,329.63,392,329.63,293.66,349.23,440,349.23];let i=0;const play=()=>{if(!musicOn)return;tone(melody[i++%melody.length],.42,0,.07);musicTimer=setTimeout(play,520)};play()}catch(e){console.warn(e);const b=$('musicBtn');if(b)b.textContent=window.gameLang==='ar'?'⚠️ الصوت غير متاح':'⚠️ Audio unavailable'}}
-function stopMusic(){musicOn=false;clearTimeout(musicTimer);musicTimer=null;if(musicGain)musicGain.gain.setTargetAtTime(.0001,audioCtx.currentTime,.04);musicLabel()}
-function toggleMusic(){musicOn?stopMusic():startMusic()}
-function injectUI(){const game=$('game');if(!game||$('simTools'))return;const main=game.querySelector('.main');if(!main)return;const box=document.createElement('div');box.id='simTools';box.className='simTools';box.innerHTML='<div class="simTop"><div><b id="simLabel">⏱️ Decision time</b><strong id="simTimer">45s</strong></div><div class="teamWrap"><b id="teamLabel">👥 Team</b><button class="teamBtn" data-team="senior">🩺 Senior OB</button><button class="teamBtn" data-team="anaesthesia">💉 Anaesthesia</button><button class="teamBtn" data-team="neonatal">👶 Neonatal</button><button class="teamBtn" data-team="blood">🩸 Blood bank</button></div></div><div id="teamMsg" class="teamMsg hidden"></div>';main.insertBefore(box,$('choices'));box.querySelectorAll('.teamBtn').forEach(btn=>btn.addEventListener('click',function(){const ar=window.gameLang==='ar';const msg={senior:ar?'تم استدعاء طبيب نسائية وتوليد أقدم.':'Senior OB/GYN has been called.',anaesthesia:ar?'تم استدعاء فريق التخدير.':'Anaesthesia team has been called.',neonatal:ar?'تم استدعاء فريق حديثي الولادة.':'Neonatal team has been called.',blood:ar?'تم إبلاغ بنك الدم/تفعيل استجابة النزف.':'Blood bank / hemorrhage response has been activated.'}[this.dataset.team];const m=$('teamMsg');if(m){m.textContent=msg;m.classList.remove('hidden')}tone(523.25,.12,0,.09);tone(659.25,.12,.14,.09)}))}
-function reduceHealth(amount){const h=$('health');if(!h)return;const n=Math.max(0,Number(h.textContent||100)-amount);h.textContent=n;const bar=$('healthBar');if(bar)bar.style.width=n+'%';const s=$('stability');if(s){const ar=window.gameLang==='ar';s.textContent=n>=75?(ar?'مستقرة نسبيًا':'Watch'):n>=45?(ar?'تحتاج تصعيدًا':'Needs escalation'):(ar?'غير مستقرة':'Unstable')}}
+function injectUI(){
+  const game=$('game'); if(!game||$('simTools')) return;
+  const main=game.querySelector('.main'); if(!main) return;
+  const box=document.createElement('div');
+  box.id='simTools';
+  box.className='simTools';
+  box.innerHTML='<div class="simTop"><div><b id="simLabel">⏱️ Decision time</b> <strong id="simTimer">45s</strong></div><div class="teamWrap"><b id="teamLabel">👥 Team</b><button class="teamBtn" data-team="senior">🩺 Senior OB</button><button class="teamBtn" data-team="anaesthesia">💉 Anaesthesia</button><button class="teamBtn" data-team="neonatal">👶 Neonatal</button><button class="teamBtn" data-team="blood">🩸 Blood bank</button></div></div><div id="teamMsg" class="teamMsg hidden"></div>';
+  main.insertBefore(box,$('choices'));
+  box.querySelectorAll('.teamBtn').forEach(btn=>btn.addEventListener('click',function(){
+    const ar=window.gameLang==='ar'||window.lang==='ar';
+    const msg={senior:ar?'تم استدعاء طبيب نسائية وتوليد أقدم.':'Senior OB/GYN has been called.',anaesthesia:ar?'تم استدعاء فريق التخدير.':'Anaesthesia team has been called.',neonatal:ar?'تم استدعاء فريق حديثي الولادة.':'Neonatal team has been called.',blood:ar?'تم إبلاغ بنك الدم/تفعيل استجابة النزف.':'Blood bank / hemorrhage response has been activated.'}[this.dataset.team];
+    const m=$('teamMsg'); if(m){m.textContent=msg;m.classList.remove('hidden');}
+  }));
+}
 function updateTimer(){const t=$('simTimer');if(t){t.textContent=seconds+'s';t.classList.toggle('urgent',seconds<=10)}}
-function startTimer(){const c=$('choices');if(!c||c.classList.contains('hidden'))return;const marker=(window.levelId||'')+'-'+(window.step||'')+'-'+c.innerHTML.length;if(marker===timerStep)return;timerStep=marker;clearInterval(timer);seconds=45;updateTimer();timer=setInterval(()=>{seconds--;updateTimer();if(seconds<=0){clearInterval(timer);const ar=window.gameLang==='ar',f=$('feedback');if(f){f.className='feedback bad';f.textContent=ar?'⏱️ انتهى الوقت. أعد تقييم المريضة وصعّد التدبير بسرعة.':'⏱️ Time expired. Reassess the patient and escalate promptly.';f.classList.remove('hidden')}reduceHealth(15);tone(130,.28,0,.11);tone(110,.28,.18,.11)}},1000)}
-function bindChoices(){const c=$('choices');if(!c||c.dataset.simBound)return;c.dataset.simBound='1';c.addEventListener('click',e=>{const b=e.target.closest('.choice');if(!b)return;clearInterval(timer);setTimeout(()=>b.classList.contains('wrong')?(reduceHealth(12),tone(180,.25,0,.09)):tone(660,.13,0,.09),50)})}
-function refresh(){injectUI();bindChoices();startTimer();musicLabel()}
-function init(){const b=$('musicBtn');if(b)b.onclick=toggleMusic;const s=$('startBtn');if(s)s.addEventListener('click',()=>setTimeout(refresh,150));const n=$('nextBtn');if(n)n.addEventListener('click',()=>setTimeout(refresh,150));const l=$('levelGrid');if(l)l.addEventListener('click',()=>setTimeout(refresh,200));const lang=$('langBtn');if(lang)lang.addEventListener('click',()=>setTimeout(musicLabel,50));setInterval(refresh,900)}
+function startTimer(){
+  const c=$('choices'); if(!c||c.classList.contains('hidden')) return;
+  const marker=(window.levelId||'')+'-'+(window.step||'')+'-'+c.innerHTML.length;
+  if(marker===timerStep) return;
+  timerStep=marker; clearInterval(timer); seconds=45; updateTimer();
+  timer=setInterval(()=>{
+    if(!$('game')||$('game').classList.contains('hidden')){clearInterval(timer);return;}
+    seconds--; updateTimer();
+    if(seconds<=0){
+      clearInterval(timer);
+      const ar=window.gameLang==='ar'||window.lang==='ar',f=$('feedback');
+      if(f){f.className='feedback bad';f.textContent=ar?'⏱️ انتهى الوقت. أعد تقييم المريضة وصعّد التدبير بسرعة.':'⏱️ Time expired. Reassess the patient and escalate promptly.';f.classList.remove('hidden');}
+      const h=$('health'); if(h){const n=Math.max(0,Number(h.textContent||100)-15);h.textContent=n;const bar=$('healthBar');if(bar)bar.style.width=n+'%';}
+    }
+  },1000);
+}
+function refresh(){injectUI();startTimer();}
+function init(){
+  const s=$('startBtn');if(s)s.addEventListener('click',()=>setTimeout(refresh,250));
+  const n=$('nextBtn');if(n)n.addEventListener('click',()=>setTimeout(refresh,250));
+  const l=$('levelGrid');if(l)l.addEventListener('click',()=>setTimeout(refresh,300));
+  const r=$('replayBtn');if(r)r.addEventListener('click',()=>setTimeout(refresh,300));
+  const lb=$('levelsBtn');if(lb)lb.addEventListener('click',()=>setTimeout(refresh,300));
+  const q=$('quitBtn');if(q)q.addEventListener('click',()=>clearInterval(timer));
+  refresh();
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
