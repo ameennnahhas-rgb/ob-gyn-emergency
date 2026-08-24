@@ -1,0 +1,40 @@
+name: Game Smoke Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app-v2.js
+          node --check education-enhancements.js
+
+      - name: Validate required game files
+        run: |
+          test -f index.html
+          test -f app-v2.js
+          test -f education-enhancements.js
+          test -f education-enhancements.css
+
+      - name: Validate game wiring
+        run: |
+          grep -q 'app-v2.js' index.html
+          grep -q 'education-enhancements.js' index.html
+          grep -q 'education-enhancements.css' index.html
+
+      - name: Smoke test passed
+        run: echo 'Game source, JavaScript syntax, required files, and wiring are valid.'
